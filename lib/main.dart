@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
 void main() => runApp(MyApp());
 
-//final list_item = [
-//  {"id": "1", "link":"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80"},
-//  {"id": "2", "link":"https://media.thereformation.com/image/upload/q_auto:eco/c_scale,w_auto:breakpoints_100_1920_9_20:544/v1/prod/media/W1siZiIsIjIwMjAvMDIvMTkvMTMvMjkvMzgvYjlmMWY3N2UtOTVhOC00OTNmLWI0YWYtY2IwMTk2YjhmOWMzL0dSQU5UX0RSRVNTX09MWU1QSUEuanBnIl1d/GRANT_DRESS_OLYMPIA.jpg",},
-//  {"id": "3", "link":"https://res.cloudinary.com/fashionasalifestyle/image/upload/f_auto/v1527700782/casual%20summer%20outfits.jpg"},
-//  {"id": "4", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-//  {"id": "5", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-//  {"id": "6", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"}
-//];
-
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
@@ -59,8 +54,6 @@ class MyApp extends StatelessWidget {
         )
     );
   }
-
-
 }
 
 class Home extends StatelessWidget {
@@ -70,25 +63,28 @@ class Home extends StatelessWidget {
       body: Center(
         child: Column(
           children: <Widget>[
-          Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Image.asset(
-            'assets/SnapIt-logo.png',
-            height: 125,
-            width: 125,
-          ),
-        ),
+            Positioned (
+              top: 4.0,
+              child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Image.asset(
+                  'assets/SnapIt-logo.png',
+                  height: 125,
+                  width: 125,
+                ),
+              ),
+            ),),
 
 
             Container(
-              padding: EdgeInsets.fromLTRB(10, 10, 10, 35),
+              padding: EdgeInsets.fromLTRB(10, 10, 10, 20),
               transform: Matrix4.rotationZ(-0.065),
               child: Text(
                 " Snap it to snap up! ",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 24,
-                    //fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,
                     color: Color(0xff878787),
                     fontFamily: 'Pacifico',
@@ -98,7 +94,7 @@ class Home extends StatelessWidget {
             ),
 
             Padding(
-              padding: EdgeInsets.fromLTRB(10, 0, 10, 35),
+              padding: EdgeInsets.fromLTRB(10, 0, 10, 5),
               child: Text(
                 "My Fashion Snaps",
                 textAlign: TextAlign.center,
@@ -112,40 +108,16 @@ class Home extends StatelessWidget {
               ),
             ),
 
-//          Container(
-////            padding: EdgeInsets.fromLTRB(10, 10, 10, 35),
-//            color: Color(0xffDFD8C8),
-//            alignment: Alignment.center,
-//            margin: new EdgeInsets.only(
-//                top: 50.0
-//            ),
-//          ),
-
-//            Row(
-//              mainAxisAlignment: MainAxisAlignment.center,
-//              children: <Widget>[
-//                Container(
-//                  color: Color(0xffDFD8C8),
-//                  padding: EdgeInsets.all(30.0),
-//                  child: Text('inside container'),
-//                  //alignment: AlignmentDirectional(0.0, 0.0),
-//                  alignment: Alignment.center,
-//                ),
-//
-//              ],
-//            ),
-
-
-                          Expanded( child: Products()),
+            Expanded(child: Products()),
 
           ],
         ),
-
         ),
       );
   }
 }
 
+// taken from Flutter tutorial Grid View - https://www.youtube.com/watch?v=W6CbCklJFi4
 class Products extends StatefulWidget {
   @override
   _ProductsState createState() => _ProductsState();
@@ -156,9 +128,10 @@ class _ProductsState extends State<Products> {
     {"id": "1", "link":"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80"},
     {"id": "2", "link":"https://media.thereformation.com/image/upload/q_auto:eco/c_scale,w_auto:breakpoints_100_1920_9_20:544/v1/prod/media/W1siZiIsIjIwMjAvMDIvMTkvMTMvMjkvMzgvYjlmMWY3N2UtOTVhOC00OTNmLWI0YWYtY2IwMTk2YjhmOWMzL0dSQU5UX0RSRVNTX09MWU1QSUEuanBnIl1d/GRANT_DRESS_OLYMPIA.jpg",},
     {"id": "3", "link":"https://res.cloudinary.com/fashionasalifestyle/image/upload/f_auto/v1527700782/casual%20summer%20outfits.jpg"},
-    {"id": "4", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-    {"id": "5", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-    {"id": "6", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"}
+    {"id": "4", "link":"https://d28m5bx785ox17.cloudfront.net/v1/img/QbP3xMAG6xMILW8msRI29Cg8u1mw97z8SYfdYhn86Fg=/sc/600x600?spatialTags=0.341035:0.592721"},
+    {"id": "5", "link":"https://cdn.cliqueinc.com/posts/259064/easy-90s-outfits-259064-1527621668761-main.700x0c.jpg"},
+    {"id": "6", "link":"https://cdd72c8b8a55fc5d1857-2b8f511b412f8d2bfde37b6dde2e2425.lmsin.net/Max/MX2/Pre%20Landing%20Page/menPLDESKTOP.jpg"},
+    {"id": "7", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
   ];
   @override
   Widget build(BuildContext context) {
@@ -197,16 +170,203 @@ class Product extends StatelessWidget {
   }
 }
 
-class Camera extends StatelessWidget {
+//tutorial from - https://www.youtube.com/watch?v=LAhiqRzbx8M
+class Camera extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text("Camera Page"),
-      ),
-    );
+  State<StatefulWidget> createState() {
+    return _CameraState();
   }
 }
+
+class _CameraState extends State<Camera> {
+  File _image;
+
+  Future getImage (bool isCamera) async {
+    File image;
+
+    if (isCamera) {
+      // catch image from device's camera and store it in variable image
+      image = await ImagePicker.pickImage(source: ImageSource.camera);
+    } else {
+      // pick an image from gallery to store it in variable image
+      image = await ImagePicker.pickImage(source: ImageSource.gallery);
+    }
+
+    setState(() {
+      _image = image;
+    });
+  }
+
+    @override
+    Widget build (BuildContext context) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              children: <Widget>[
+                  SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(5, 15, 30, 5),
+                      child: Text(
+                        "Snap It!",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.5,
+                            color: Color(0xff000000),
+                            fontFamily: 'Pacifico'
+                        ),
+                      ),
+                    ),
+                  ),
+                Center(
+                  child: Row(
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(57, 10, 57, 15),
+                        child: Text(
+                          "Snap a picture of the outfit!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 20,
+                              //fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                              color: Color(0xff878787),
+                              fontFamily: 'JosefinSans'
+                          ),
+                        ),),
+                    ],
+                  ),
+                ),
+
+                Row (
+                  children: <Widget>[
+                    Container(
+                      padding: EdgeInsets.only(left: 70),
+                      decoration: BoxDecoration(
+                        border: Border(right: BorderSide(width: 1, color: Colors.black87)),
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.only(left: 0),
+                            child: IconButton(icon: Icon(Icons.add_photo_alternate),
+                              onPressed: () {
+                                getImage(false);
+                              },
+                            ),
+                          ),
+
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(5, 10, 30, 5),
+                            child: GestureDetector (
+                              child: Text(
+                                "Upload",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    letterSpacing: 1.0,
+                                    color: Color(0xff878787),
+                                    fontFamily: 'JosefinSans'
+                                ),
+                              ),
+                              onTap: () {
+                                getImage(false);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(5, 10, 5, 5),
+                      child: IconButton(icon: Icon(Icons.camera_alt), onPressed: (){
+                        getImage(true);
+                      },
+                    ),
+                    ),
+
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(5, 10, 10, 5),
+
+                      child: GestureDetector (
+                        child: Text(
+                          "Camera",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 16,
+                              //fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                              color: Color(0xff878787),
+                              fontFamily: 'JosefinSans'
+                          ),
+                        ),
+                        onTap: () {
+                          getImage(true);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                _image == null ? Container(
+                  child: Align(
+                    child: Wrap(
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.only(top: 100),
+
+                          child: Row(
+                            children: <Widget>[
+                              Padding(
+                                padding: EdgeInsets.only(left: 80),
+                                child: IconButton(icon: Icon(Icons.mood_bad),
+                                ),
+                              ),
+
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(5, 7, 70, 5),
+                                child: Text(
+                                  "No image available.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      letterSpacing: 1.0,
+                                      color: Color(0xff878787),
+                                      fontFamily: 'JosefinSans'
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(75, 10, 75, 5),
+                          child: Text(
+                            "Please upload or take a picture.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 16,
+                                letterSpacing: 1.0,
+                                color: Color(0xff878787),
+                                fontFamily: 'JosefinSans'
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ) : Container(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Image.file(_image, height: 400.0, width: 400.0,),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
 
 class ProductPage extends StatelessWidget {
   @override
@@ -217,7 +377,13 @@ class ProductPage extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.white,
       ),
-      //body:
+      body: Center(
+        child: Column(
+          children: <Widget>[
+
+          ],
+        ),
+      ),
     );
   }
 }
