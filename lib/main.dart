@@ -1,17 +1,18 @@
-import 'package:flutter/material.dart';
+import 'dart:developer';
 
+import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-
         home:DefaultTabController(
           length: 3,
           child: new Scaffold(
@@ -67,16 +68,15 @@ class Home extends StatelessWidget {
             Positioned (
               top: 4.0,
               child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Image.asset(
-                  'assets/SnapIt-logo.png',
-                  height: 125,
-                  width: 125,
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Image.asset(
+                    'assets/SnapIt-logo.png',
+                    height: 125,
+                    width: 125,
+                  ),
                 ),
-              ),
             ),),
-
 
             Container(
               padding: EdgeInsets.fromLTRB(10, 10, 10, 20),
@@ -87,7 +87,7 @@ class Home extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 24,
                     letterSpacing: 2.0,
-                    color: Color(0xff878787),
+                    color: Color(0xff4A4A4A),
                     fontFamily: 'Pacifico',
                     backgroundColor: Color(0xffFCF6E6)
                 ),
@@ -101,16 +101,13 @@ class Home extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 24,
-                    //fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,
-                    color: Color(0xff878787),
+                    color: Color(0xff4A4A4A),
                     fontFamily: 'JosefinSans'
                 ),
               ),
             ),
-
             Expanded(child: Products()),
-
           ],
         ),
         ),
@@ -125,54 +122,125 @@ class Products extends StatefulWidget {
 }
 
 class _ProductsState extends State<Products> {
-  final list_item = [
-    {"id": "1", "link":"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80"},
-    {"id": "2", "link":"https://media.thereformation.com/image/upload/q_auto:eco/c_scale,w_auto:breakpoints_100_1920_9_20:544/v1/prod/media/W1siZiIsIjIwMjAvMDIvMTkvMTMvMjkvMzgvYjlmMWY3N2UtOTVhOC00OTNmLWI0YWYtY2IwMTk2YjhmOWMzL0dSQU5UX0RSRVNTX09MWU1QSUEuanBnIl1d/GRANT_DRESS_OLYMPIA.jpg",},
-    {"id": "3", "link":"https://res.cloudinary.com/fashionasalifestyle/image/upload/f_auto/v1527700782/casual%20summer%20outfits.jpg"},
-    {"id": "4", "link":"https://d28m5bx785ox17.cloudfront.net/v1/img/QbP3xMAG6xMILW8msRI29Cg8u1mw97z8SYfdYhn86Fg=/sc/600x600?spatialTags=0.341035:0.592721"},
-    {"id": "5", "link":"https://cdn.cliqueinc.com/posts/259064/easy-90s-outfits-259064-1527621668761-main.700x0c.jpg"},
-    {"id": "6", "link":"https://cdd72c8b8a55fc5d1857-2b8f511b412f8d2bfde37b6dde2e2425.lmsin.net/Max/MX2/Pre%20Landing%20Page/menPLDESKTOP.jpg"},
-    {"id": "7", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-  ];
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-        itemCount: list_item.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-        itemBuilder: (BuildContext context, int index){
-          return Product(
-            product_id: list_item[index]['id'],
-            product_pic: list_item[index]['link'],
-          );
-        });
+    @override
+    Widget build(BuildContext context) {
+    // retrieving data from Firebase tutorial - https://www.youtube.com/watch?v=R12ks4yDpMM
+    return StreamBuilder(
+      stream: Firestore.instance.collection('product').snapshots(),
+      builder: (context, snapshot){
+        if(!snapshot.hasData){
+          return Text('Your outfit inspirations will be displayed here once they are uploaded.');
+        }
+        else {
+          List<DocumentSnapshot> userInspo = snapshot.data.documents.where((outfitInspo) => outfitInspo['url'] == "").toList();
+          if(userInspo.length > 0){
+            return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+                itemCount: userInspo.length,
+                itemBuilder: (context, index){
+                  DocumentSnapshot myproduct = userInspo[index];
+                  return Product(
+                    product_id: myproduct.documentID,
+                    product_pic_path: '${myproduct['imagePath']}',
+                    product_pic: '${myproduct['image']}',
+                    product_url: '${myproduct['url']}',
+                    product_type: '${myproduct['clothing-item']}',
+                    product_colour: '${myproduct['colour']}',
+                    product_gender: '${myproduct['gender']}',
+                  );
+                }
+            );
+          }
+          else {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(50, 50, 50, 50),
+              child: Container(
+                margin: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(30.0),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Color(0xffCAE8DC), //                   <--- border color
+                    width: 2.0,
+                  ),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      'You currently do not have any clothing snaps. Please upload you clothing inspirations on the camera tab below to find similar products.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 20,
+                          height: 1.5,
+                          letterSpacing: 1.0,
+                          color: Color(0xff4A4A4A),
+                          fontFamily: 'JosefinSans'
+                      ),
+                    ),
+                    Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child:Icon(
+                            Icons.arrow_downward,
+                        size: 100,
+                          color: Color(0xffCAE8DC),
+                        )
+                    )
+                  ],
+                ),
+              )
+            );
+          }
+        }
+      },
+    );
   }
 }
 
 class Product extends StatelessWidget {
   final product_pic;
+  final product_pic_path;
   final product_id;
+  final product_url;
+  final product_type;
+  final product_colour;
+  final product_gender;
 
-  Product({this.product_id, this.product_pic});
+  Product({
+    this.product_id,
+    this.product_pic_path,
+    this.product_pic,
+    this.product_url,
+    this.product_type,
+    this.product_colour,
+    this.product_gender
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Hero(
+      return Card(
+        child: Hero(
           tag: product_id,
           child: Material(
             child: InkWell(
               onTap: () => Navigator.of(context).push(new MaterialPageRoute(builder: (context) => new SimilarProductsPage(
-                product_id: product_id,
-                product_pic: product_pic,
+              product_id: product_id,
+              product_pic_path: product_pic_path,
+              product_pic: product_pic,
+              product_type: product_type,
+              product_colour: product_colour,
+              product_gender: product_gender,
               ))),
               child: GridTile(
                 child: Image.network(product_pic, fit: BoxFit.cover),
-              ),
             ),
-          )),
-    );
+          ),
+        )),
+      );
   }
 }
+
+
+
+
 
 
 ///             ////
@@ -187,21 +255,18 @@ class Camera extends StatefulWidget {
   }
 }
 
-enum Gender {female, male}
+class ImageProperties {
+  final path;
+  final url;
+  const ImageProperties(this.path, this.url);
+}
 
 class _CameraState extends State<Camera> {
-  File _image;
-  Gender _gender = Gender.female;
+  ImageProperties _image = null;
+  String _similarProductDocumentID;
+  String _gender = "female";
   String _clothingItem;
-
-  bool whiteVal = false;
-  bool blackVal = false;
-  bool greyVal = false;
-  bool blueVal = false;
-  bool redVal = false;
-  bool greenVal = false;
-  bool orangeVal = false;
-  bool yellowVal = false;
+  String _clothingColour;
 
   Future getImage (bool isCamera) async {
     File image;
@@ -209,91 +274,40 @@ class _CameraState extends State<Camera> {
     if (isCamera) {
       // catch image from device's camera and store it in variable image
       image = await ImagePicker.pickImage(source: ImageSource.camera);
+
     } else {
       // pick an image from gallery to store it in variable image
       image = await ImagePicker.pickImage(source: ImageSource.gallery);
     }
 
+    // to upload images to Firebase Storage and load them via the network - https://medium.com/flutter-community/loading-image-from-firebase-storage-in-flutter-app-android-ios-web-1951607ec9ef
+    await FirebaseStorage.instance.ref().child(image.path).putFile(image).onComplete;
+
+    dynamic imageInTheCloud = await FirebaseStorage.instance.ref().child(image.path).getDownloadURL();
+
     setState(() {
-      _image = image;
+      _image = new ImageProperties(image.path, imageInTheCloud);
     });
   }
-
-//  Future uploadInspoOutfit(BuildContext context) async{
-//    String filName=basename(_image.path);
-//    StorageReference firebaseStorageRef=firebaseStorage.instance.ref().child(filName);
-//    StorageUploadTask uploadTask=firebaseStorageRef.putFile(_image);
-//    StorageTaskSnapshot taskSnapshot = await uploadTask.onComplete;
-//    setState(() {
-//      //TODO: goes to similar product page
-//    });
-//  }
 
   final formKey = new GlobalKey<FormState>();
 
   _searchProduct() {
-    var form = formKey.currentState;
-    if (form.validate()) {
-      form.save();
-      setState(() {
-        //_similarProductResult = _product; // _product to be an object of product details
-      });
-    }
+    Firestore.instance.collection('product').document().setData({
+      'clothing-item': _clothingItem,
+      'colour' : _clothingColour,
+      'gender' : _gender.toString(),
+      'imagePath': _image.path,
+      'image' : _image.url,
+      'url' : '',
+      'wishlist' : false,
+      'product-name' : '',
+      'product-price' : ''
+    });
   }
 
-  //
-  // COLOUR CHECKBOX WIDGET
-  //
-  Widget checkbox (bool boolValue, String colour) {
-    return Row(
-      children: <Widget>[
-        Checkbox(
-          value: boolValue,
-          activeColor: Color(0xffCAE8DC),
-          onChanged: (bool value) {
-            setState(() {
-              switch (colour) {
-                case "White":
-                  whiteVal = value;
-                  break;
-                case "Black":
-                  blackVal = value;
-                  break;
-                case "Grey":
-                  greyVal = value;
-                  break;
-                case "Blue":
-                  blueVal = value;
-                  break;
-                case "Red":
-                  redVal = value;
-                  break;
-                case "Green":
-                  greenVal = value;
-                  break;
-                case "Orange":
-                  orangeVal = value;
-                  break;
-                case "Yellow":
-                  yellowVal = value;
-                  break;
-              }
-            });
-          },
-        ),
-        Text(
-            colour,
-          style: TextStyle(
-              fontSize: 16,
-              letterSpacing: 1.0,
-              color: Color(0xff878787),
-              fontFamily: 'JosefinSans'
-          ),)
-      ],
-    );
-  }
-
-  List<String> _clothingItems = <String>['Tops', 'Bottoms', 'Skirts', 'Dresses', 'Coats & Jackets', 'Jumpsuits'];
+  List<String> _clothingItems = <String>['Tops', 'Bottoms', 'Skirts', 'Dresses', 'Coats & Jackets', 'Jumpsuits', 'Sweatshirt & Hoodies'];
+  List<String> _clothingColours = <String>['White', 'Black', 'Grey', 'Green', 'Yellow', 'Blue', 'Red', 'Orange', 'Cream', 'Brown', 'Camel', 'Pink', 'Purple', 'Burgundy'];
 
 
     @override
@@ -330,16 +344,14 @@ class _CameraState extends State<Camera> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 20,
-                              //fontWeight: FontWeight.bold,
                               letterSpacing: 1.5,
-                              color: Color(0xff878787),
+                              color: Color(0xff4A4A4A),
                               fontFamily: 'JosefinSans'
                           ),
                         ),),
                     ],
                   ),
                 ),
-
                 Row (
                   children: <Widget>[
                     Container(
@@ -358,7 +370,6 @@ class _CameraState extends State<Camera> {
                               },
                             ),
                           ),
-
                           Padding(
                             padding: EdgeInsets.fromLTRB(5, 10, 30, 5),
                             child: GestureDetector (
@@ -368,7 +379,7 @@ class _CameraState extends State<Camera> {
                                 style: TextStyle(
                                     fontSize: 16,
                                     letterSpacing: 1.0,
-                                    color: Color(0xff878787),
+                                    color: Color(0xff4A4A4A),
                                     fontFamily: 'JosefinSans'
                                 ),
                               ),
@@ -382,12 +393,12 @@ class _CameraState extends State<Camera> {
                     ),
                     Padding(
                       padding: EdgeInsets.fromLTRB(5, 10, 5, 5),
-                      child: IconButton(icon: Icon(Icons.camera_alt), onPressed: (){
+                      child: IconButton(icon: Icon(Icons.camera_alt),
+                      onPressed: (){
                         getImage(true);
                       },
                     ),
                     ),
-
                     Padding(
                       padding: EdgeInsets.fromLTRB(5, 10, 10, 5),
 
@@ -397,9 +408,8 @@ class _CameraState extends State<Camera> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 16,
-                              //fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
-                              color: Color(0xff878787),
+                              color: Color(0xff4A4A4A),
                               fontFamily: 'JosefinSans'
                           ),
                         ),
@@ -416,24 +426,22 @@ class _CameraState extends State<Camera> {
                       children: <Widget>[
                         Padding(
                           padding: EdgeInsets.only(top: 100),
-
                           child: Row(
                             children: <Widget>[
                               Padding(
-                                padding: EdgeInsets.only(left: 80),
-                                child: IconButton(icon: Icon(Icons.mood_bad),
-                                ),
+                                padding: EdgeInsets.only(left: 105),
+                                child: Icon(Icons.mood_bad),
                               ),
 
                               Padding(
-                                padding: EdgeInsets.fromLTRB(5, 7, 70, 5),
+                                padding: EdgeInsets.fromLTRB(10, 7, 70, 5),
                                 child: Text(
                                   "No image available.",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       fontSize: 16,
                                       letterSpacing: 1.0,
-                                      color: Color(0xff878787),
+                                      color: Color(0xff4A4A4A),
                                       fontFamily: 'JosefinSans'
                                   ),
                                 ),
@@ -444,12 +452,13 @@ class _CameraState extends State<Camera> {
                         Padding(
                           padding: EdgeInsets.fromLTRB(75, 10, 75, 100),
                           child: Text(
-                            "Please upload or take a picture.",
+                            "Please upload or take a picture to find similar clothing items.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontSize: 16,
                                 letterSpacing: 1.0,
-                                color: Color(0xff878787),
+                                height: 1.75,
+                                color: Color(0xff4A4A4A),
                                 fontFamily: 'JosefinSans'
                             ),
                           ),
@@ -461,7 +470,7 @@ class _CameraState extends State<Camera> {
                   padding: EdgeInsets.only(top: 20, bottom: 20),
                   child: Column(
                     children: <Widget>[
-                      Image.file(_image, height: 400.0, width: 400.0,),
+                      Image.network(_image.url, height: 400.0, width: 400.0,),
                       Form(
                         key: formKey,
                         child: Container(
@@ -480,7 +489,7 @@ class _CameraState extends State<Camera> {
                                             fontSize: 24,
                                             //fontWeight: FontWeight.bold,
                                             letterSpacing: 2.0,
-                                            color: Color(0xff878787),
+                                            color: Color(0xff4A4A4A),
                                             fontFamily: 'JosefinSans'
                                         ),
                                       ),
@@ -513,14 +522,13 @@ class _CameraState extends State<Camera> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
                                     Radio(
-                                        value: Gender.female,
+                                        value: "female",
                                         groupValue: _gender,
                                         activeColor: Color(0xffCAE8DC),
-                                        onChanged: (Gender value) {
+                                        onChanged: (String value) {
                                           setState(() {
                                             _gender = value;
-
-                                            _clothingItems = <String>['Tops', 'Bottoms', 'Skirts', 'Dresses', 'Coats & Jackets', 'Jumpsuits'];
+                                            _clothingItems = <String>['Tops', 'Bottoms', 'Skirts', 'Dresses', 'Coats & Jackets', 'Jumpsuits', 'Sweatshirt & Hoodies'];
                                             _clothingItem = _clothingItems[0];
                                           });
                                         }
@@ -528,41 +536,33 @@ class _CameraState extends State<Camera> {
                                     Padding(
                                       padding: EdgeInsets.only(right: 65),
                                       child: Text(
-                                        "Female",
+                                        "Womens",
                                         style: TextStyle(
                                           fontSize: 16,
                                           letterSpacing: 1.0,
-                                          color: Color(0xff878787),
+                                          color: Color(0xff4A4A4A),
                                           fontFamily: 'JosefinSans',
                                         ),
                                       ),
                                     ),
-
                                     Radio(
-                                        value: Gender.male,
+                                        value: "male",
                                         groupValue: _gender,
                                         activeColor: Color(0xffCAE8DC),
-                                        onChanged: (Gender value) {
+                                        onChanged: (String value) {
                                           setState(() {
                                             _gender = value;
-
-                                            _clothingItems = <String>['Tops', 'Bottoms', 'Coats & Jackets'];
-
-                                            //Potenital
-                                            //If _clothingItem is in _clothingItems don't do anything
-                                            //If not sett _clothingitem to _clothingItems[0]
-
+                                            _clothingItems = <String>['Tops', 'Bottoms', 'Coats & Jackets', 'Sweatshirt & Hoodies'];
                                             _clothingItem = _clothingItems[0];
                                           });
                                         }
                                     ),
-
                                     Text(
-                                      "Male",
+                                      "Mens",
                                       style: TextStyle(
                                           fontSize: 16,
                                           letterSpacing: 1.0,
-                                          color: Color(0xff878787),
+                                          color: Color(0xff4A4A4A),
                                           fontFamily: 'JosefinSans'
                                       ),
                                     ),
@@ -602,14 +602,14 @@ class _CameraState extends State<Camera> {
                                           style: TextStyle(
                                               fontSize: 16,
                                               letterSpacing: 1.0,
-                                              color: Color(0xff878787),
+                                              color: Color(0xff4A4A4A),
                                               fontFamily: 'JosefinSans'
                                           ),
                                         ),
                                         style: TextStyle(
                                             fontSize: 16,
                                             letterSpacing: 1.0,
-                                            color: Color(0xff878787),
+                                            color: Color(0xff4A4A4A),
                                             fontFamily: 'JosefinSans'
                                         ),
                                         onChanged: (String value) {
@@ -618,7 +618,6 @@ class _CameraState extends State<Camera> {
                                           });
                                         },
                                         value: _clothingItem,
-
                                         items: _clothingItems.map<DropdownMenuItem<String>>((String value) {
                                           return DropdownMenuItem<String>(
                                             value: value,
@@ -631,7 +630,7 @@ class _CameraState extends State<Camera> {
                               ),
 
                               //
-                              // Clothing colour checkbox
+                              // Clothing colour dropdown
                               //
                               Padding(
                                 padding: EdgeInsets.fromLTRB(75, 30, 0, 5),
@@ -650,35 +649,49 @@ class _CameraState extends State<Camera> {
                                 ),
                               ),
 
-                              // checkbox tutorial taken from - https://medium.com/@azpm95/dynamic-checkbox-widgets-in-flutter-29973504c410
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: <Widget>[
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      checkbox(whiteVal, "White"),
-                                      checkbox(blueVal, "Blue"),
-                                      checkbox(redVal, "Red"),
-                                      checkbox(blackVal, "Black"),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: <Widget>[
-                                      checkbox(greenVal, "Green"),
-                                      checkbox(orangeVal, "Orange"),
-                                      checkbox(yellowVal, "Yellow"),
-                                      checkbox(greyVal, "Grey"),
-                                    ],
-                                  ),
-                                ],
+                              //
+                              // COLOUR dropdown
+                              //
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(90, 0, 0, 5),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: <Widget>[
+                                    DropdownButton<String>(
+                                        hint: Text(
+                                          "Select....",
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              letterSpacing: 1.0,
+                                              color: Color(0xff4A4A4A),
+                                              fontFamily: 'JosefinSans'
+                                          ),
+                                        ),
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            letterSpacing: 1.0,
+                                            color: Color(0xff4A4A4A),
+                                            fontFamily: 'JosefinSans'
+                                        ),
+                                        onChanged: (String selectedColour) {
+                                          setState(() {
+                                            _clothingColour = selectedColour;
+                                          });
+                                        },
+                                        value: _clothingColour,
+                                        items: _clothingColours.map<DropdownMenuItem<String>>((String colour) {
+                                          return DropdownMenuItem<String>(
+                                            value: colour,
+                                            child: Text(colour),
+                                          );
+                                        }).toList()
+                                    ),
+                                  ],
+                                ),
                               ),
 
                               Container(
                                 padding: EdgeInsets.all(40),
-
                                 child: RaisedButton(
                                   child: Text('Search',
                                   style: TextStyle(
@@ -689,10 +702,24 @@ class _CameraState extends State<Camera> {
                                   ),),
                                   color: Color(0xffCAE8DC),
                                   padding: EdgeInsets.fromLTRB(80, 10, 80, 10),
-                                  onPressed: () {
-                                    //uploadInspoOutfit(context);
-                                    _searchProduct;
-                                    },
+                                  onPressed: () => {
+                                    _searchProduct(),
+                                    Navigator.of(context).push(new MaterialPageRoute(builder: (context) => new SimilarProductsPage(
+                                      product_id: "",
+                                      product_pic: _image.url,
+                                      product_pic_path: _image.path,
+                                      product_type: _clothingItem,
+                                      product_colour: _clothingColour,
+                                      product_gender: _gender.toString(),
+                                    ),)).then((value) =>
+                                      setState(() {
+                                        _image = null;
+                                        _gender = "female";
+                                        _clothingColour = null;
+                                        _clothingItem = null;
+                                      })
+                                    ),
+                                  }
                                 ),
                               ),
                             ],
@@ -710,6 +737,10 @@ class _CameraState extends State<Camera> {
     }
   }
 
+
+
+
+
 ///                       ////
 /// SIMILAR PRODUCT PAGE ////
 ///                     ////
@@ -717,11 +748,19 @@ class _CameraState extends State<Camera> {
 // Product Page widget following tutorial from Santos Enoque - https://www.youtube.com/watch?v=4DxEgh39aHg&list=PLmnT6naTGy2SC82FMSCrvZNogg5T1H7iF&index=16
 class SimilarProductsPage extends StatefulWidget {
   final product_pic;
+  final product_pic_path;
   final product_id;
+  final product_type;
+  final product_colour;
+  final product_gender;
 
   SimilarProductsPage({
     this.product_pic,
-    this.product_id
+    this.product_pic_path,
+    this.product_id,
+    this.product_type,
+    this.product_colour,
+    this.product_gender
   });
 
   @override
@@ -729,6 +768,83 @@ class SimilarProductsPage extends StatefulWidget {
 }
 
 class _SimilarProductsPageState extends State<SimilarProductsPage> {
+  // url launcher taken from flutter docs - https://pub.dev/packages/url_launcher#-readme-tab-
+  _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  _deleteUpload() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+            title: new Text(
+                "Delete uploaded image?",
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1.0,
+                    color: Color(0xff000000),
+                    fontFamily: 'JosefinSans'
+                )),
+            content: new Text(
+                "This image will be permanently deleted. This cannot be recovered once deleted.",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 1.0,
+                    color: Color(0xff000000),
+                    fontFamily: 'JosefinSans'
+                )),
+            actions: <Widget>[
+              // usually buttons at the bottom of the dialog
+
+              new FlatButton(
+                child: new Text(
+                    "Cancel",
+                  style: TextStyle(
+                    color: Colors.grey,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 1.0,
+                      fontFamily: 'JosefinSans',
+                  ),
+                ),
+                onPressed: () => {
+                  Navigator.of(context, rootNavigator: true).pop('dialog')
+                },
+              ),
+              new Container(
+                color: Colors.red,
+                child: new FlatButton(
+                  child: new Text(
+                    "Delete",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 1.0,
+                      fontFamily: 'JosefinSans',
+                      color: Colors.white,
+                    ),),
+                  onPressed: () => {
+                    FirebaseStorage.instance.ref().child(widget.product_pic_path).delete(),
+                    Firestore.instance.collection('product').where("imagePath", isEqualTo: widget.product_pic_path).snapshots().listen((data) => {
+                      data.documents.forEach((doc) => Firestore.instance.collection('product').document(doc.documentID).delete()),
+                      Navigator.of(context, rootNavigator: true).pop('dialog')
+                    })
+                  },
+                ),
+              ),
+            ],
+          );
+  });}
+
+
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -756,12 +872,23 @@ class _SimilarProductsPageState extends State<SimilarProductsPage> {
                     color: Color(0xff000000),
                     fontFamily: 'Pacifico'
                 ),
-              )
+              ),
+              actions: <Widget>[
+                IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: Colors.grey,
+                      size: 32,
+                    ),
+                    onPressed: () => {
+                      _deleteUpload()
+                    })
+              ]
           )),
       body: new ListView(
         children: <Widget>[
           new Container(
-            height: 300,
+            height: 250,
             child: GridTile(
                 child: Container(
                   padding: EdgeInsets.only(top: 30, bottom: 30),
@@ -770,15 +897,240 @@ class _SimilarProductsPageState extends State<SimilarProductsPage> {
                 )
             ),
           ),
+
+          Container(
+            padding: EdgeInsets.fromLTRB(10, 0, 10, 20),
+            transform: Matrix4.rotationZ(-0.065),
+            child: Text(
+              " Now snap up! ",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 24,
+                  letterSpacing: 2.0,
+                  color: Color(0xff4A4A4A),
+                  fontFamily: 'Pacifico',
+                  backgroundColor: Color(0xffFCF6E6)
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsets.fromLTRB(10, 0, 10, 5),
+            child: Text(
+              "Similar Products",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 24,
+                  //fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                  color: Color(0xff4A4A4A),
+                  fontFamily: 'JosefinSans'
+              ),
+            ),
+          ),
+
+          Expanded(
+              child: StreamBuilder(
+                stream: Firestore.instance.collection('product').snapshots(),
+                builder: (context, snapshot){
+                  if(!snapshot.hasData){
+                    return Text('No similar products are currently available, but please do check back with us soon.');
+                  }
+                  else {
+                    List<DocumentSnapshot> similarProducts = snapshot.data.documents.where(
+                    (similarProduct) => similarProduct['url'] != ""
+                    && similarProduct['clothing-item'] == widget.product_type
+                    && similarProduct['colour'] == widget.product_colour
+                    && similarProduct['gender'] == widget.product_gender).toList();
+
+                    // to create custom height of GridView widget - https://stackoverflow.com/questions/48405123/how-to-set-custom-height-for-widget-in-gridview-in-flutter
+                    var size = MediaQuery.of(context).size;
+
+                    /*24 is for notification bar on Android*/
+                    final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
+                    final double itemWidth = size.width / 2;
+
+                    if ( similarProducts.length > 0){
+                      return SizedBox(
+                          height: 450,
+                          child: GridView.builder(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: (itemWidth / itemHeight)),
+                              itemCount: similarProducts.length,
+                              itemBuilder: (context, index){
+                                DocumentSnapshot myproduct = similarProducts[index];
+                                return similarProduct(
+                                    product: myproduct,
+                                    similar_product_pic: '${myproduct['image']}',
+                                    similar_product_pic_path: '${myproduct['imagePath']}',
+                                    similar_product_url: '${myproduct['url']}',
+                                    similar_product_name:'${myproduct['product-name']}',
+                                    similar_product_price:'${myproduct['product-price']}',
+                                    similar_product_fav: '${myproduct['wishlist']}'
+                                );
+                              }
+                          )
+                      );
+                    }
+                    else {
+                      return Padding(
+                          padding: EdgeInsets.fromLTRB(50, 50, 50, 50),
+                          child: Container(
+                            margin: const EdgeInsets.all(10.0),
+                            padding: const EdgeInsets.all(30.0),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Color(0xffCAE8DC),
+                                width: 2.0,
+                              ),
+                            ),
+                            child: Column(
+                              children: <Widget>[
+                                Text(
+                                  'Unfortunately, there arent any similar products currently available, but please do check up on us every now & then!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      height: 1.5,
+                                      letterSpacing: 1.0,
+                                      color: Color(0xff4A4A4A),
+                                      fontFamily: 'JosefinSans'
+                                  ),
+                                )
+                              ],
+                            ),
+                          )
+                      );
+                    }
+                  }
+                },
+              )
+          )
         ],
       ),
     );
   }
 }
 
+class similarProduct extends StatelessWidget {
+  final product;
+  final similar_product_pic;
+  final similar_product_url;
+  final similar_product_name;
+  final similar_product_price;
+  final similar_product_fav;
+  final similar_product_pic_path;
+
+  similarProduct({this.product, this.similar_product_name, this.similar_product_price, this.similar_product_pic, this.similar_product_url, this.similar_product_fav, this.similar_product_pic_path});
+
+// url launcher taken from flutter docs - https://pub.dev/packages/url_launcher#-readme-tab-
+  _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+@override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Material(
+          child: InkWell(
+            child: GridTile(
+              child: Image.network(similar_product_pic, fit: BoxFit.cover),
+              footer: Container(
+                color: Colors.white,
+                child: ListTile(
+                  contentPadding: EdgeInsets.all(10),
+                  title: Text(
+                      similar_product_name,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 1.0,
+                          color: Color(0xff000000),
+                          fontFamily: 'JosefinSans'
+                      )),
+                  subtitle: Text(
+                    '£' + similar_product_price,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.0,
+                        color: Color(0xff898989),
+                        fontFamily: 'JosefinSans'
+                    ),
+                  ),
+                  trailing:
+                  similar_product_fav == "true" ?
+                  IconButton(
+                      icon: Icon(
+                          Icons.favorite,
+                          color: Colors.redAccent,
+                          size: 32),
+                      onPressed: () => {
+                        // updating wishlist using tutorial from - https://codelabs.developers.google.com/codelabs/flutter-firebase/index.html#10
+                        Firestore.instance.collection('product').document(product.documentID).updateData({'wishlist': false})
+                      }
+                  ) :
+                  IconButton(
+                      icon: Icon(
+                          Icons.favorite_border,
+                          color: Colors.grey,
+                          size: 32),
+                      onPressed: () => {
+                        Firestore.instance.collection('product').document(product.documentID)
+                            .updateData({'wishlist': true})
+                      }
+                  ),
+                ),
+              ),
+            ),
+            onTap: () => _launchURL(similar_product_url),
+          ),
+      )
+    );
+  }
+}
+
+
+
+
+
 ///                 ////
 ///  WISHLIST PAGE ////
 ///                ////
+class Wishlist extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(0, 45, 0, 5),
+              child: Text(
+                "Wishlist",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 24,
+                    //fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    color: Color(0xff4A4A4A),
+                    fontFamily: 'JosefinSans'
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: wishlistProducts())
+        ],
+      ),
+    );
+  }
+}
 
 // taken from Flutter tutorial Grid View - https://www.youtube.com/watch?v=W6CbCklJFi4
 class wishlistProducts extends StatefulWidget {
@@ -787,40 +1139,77 @@ class wishlistProducts extends StatefulWidget {
 }
 
 class _wishlistProductsState extends State<wishlistProducts> {
-  final wishlist_item = [
-    {"id": "1", "productName": "product title 1 product title 1 product title 1 product title 1product title 1 product title 1", "price":"£150.00", "link":"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80"},
-    {"id": "2", "productName": "Gianni Feraud Tailored coat-Blue - ASOS Outlet", "price":"£250.00", "link":"https://media.thereformation.com/image/upload/q_auto:eco/c_scale,w_auto:breakpoints_100_1920_9_20:544/v1/prod/media/W1siZiIsIjIwMjAvMDIvMTkvMTMvMjkvMzgvYjlmMWY3N2UtOTVhOC00OTNmLWI0YWYtY2IwMTk2YjhmOWMzL0dSQU5UX0RSRVNTX09MWU1QSUEuanBnIl1d/GRANT_DRESS_OLYMPIA.jpg",},
-    {"id": "3", "productName": "product title 3", "price":"£300.00", "link":"https://res.cloudinary.com/fashionasalifestyle/image/upload/f_auto/v1527700782/casual%20summer%20outfits.jpg"},
-    {"id": "4", "productName": "product title 4", "price":"£750.00", "link":"https://d28m5bx785ox17.cloudfront.net/v1/img/QbP3xMAG6xMILW8msRI29Cg8u1mw97z8SYfdYhn86Fg=/sc/600x600?spatialTags=0.341035:0.592721"},
-    {"id": "5", "productName": "product title 5", "price":"£450.00", "link":"https://cdn.cliqueinc.com/posts/259064/easy-90s-outfits-259064-1527621668761-main.700x0c.jpg"},
-    {"id": "6", "productName": "product title 6", "price":"£550.00", "link":"https://cdd72c8b8a55fc5d1857-2b8f511b412f8d2bfde37b6dde2e2425.lmsin.net/Max/MX2/Pre%20Landing%20Page/menPLDESKTOP.jpg"},
-    {"id": "7", "productName": "product title 7", "price":"£50.00", "link":"https://cdn.cliqueinc.com/posts/282188/london-autumn-fashion-trends-282188-1567115968335-image.700x0c.jpg"},
-  ];
-
   @override
   Widget build(BuildContext context) {
-  return ListView.builder(
-    itemCount: wishlist_item.length,
-    itemBuilder: (BuildContext context, int index){
-      return wishlistProduct(
-        wishlist_product_id: wishlist_item[index]['id'],
-        wishlist_product_name: wishlist_item[index]['productName'].toString(),
-        wishlist_product_price: wishlist_item[index]['price'].toString(),
-        wishlist_product_pic: wishlist_item[index]['link'],
-        wishlist_product_link: wishlist_item[index]['link'],
-      );
-    });
+    return StreamBuilder(
+      stream: Firestore.instance.collection('product').snapshots(),
+      builder: (context, snapshot){
+        if(!snapshot.hasData){
+          return Text('Your wishlist items will be displayed here.');
+        }
+        else {
+          List<DocumentSnapshot> userWishlist = snapshot.data.documents.where((similarProduct) => similarProduct['wishlist'] == true && similarProduct['url'] != "").toList();
+
+          if (userWishlist.length > 0) {
+            return ListView.builder(
+                itemCount: userWishlist.length,
+                itemBuilder: (context, index) {
+                  DocumentSnapshot myproduct = userWishlist[index];
+                  return wishlistProduct(
+                    product: myproduct,
+                    wishlist_product_name: '${myproduct['product-name']}'
+                        .toString(),
+                    wishlist_product_price: '${myproduct['product-price']}',
+                    wishlist_product_pic: '${myproduct['image']}',
+                    wishlist_product_pic_path: '${myproduct['imagePath']}',
+                    wishlist_product_link: '${myproduct['url']}',
+                  );
+                }
+            );
+          }
+          else{
+            return
+
+              Padding(
+                  padding: EdgeInsets.fromLTRB(50, 100, 50, 250),
+                  child: Container(
+                    margin: const EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(30.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Color(0xffCAE8DC),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: Text(
+                      'You currently do not have anything in your wishlist. Tap the heart on similar products to add your favourite products to your wishlist.',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                          fontSize: 20,
+                          height: 1.5,
+                          letterSpacing: 1.0,
+                          color: Color(0xff4A4A4A),
+                          fontFamily: 'JosefinSans'
+                      ),
+                    )
+                  )
+              );
+          }
+        }
+      },
+    );
   }
 }
 
 class wishlistProduct extends StatelessWidget {
-  final wishlist_product_id;
+  final product;
   final wishlist_product_name;
   final wishlist_product_price;
   final wishlist_product_pic;
+  final wishlist_product_pic_path;
   final wishlist_product_link;
 
-  wishlistProduct({this.wishlist_product_id, this.wishlist_product_name, this.wishlist_product_price, this.wishlist_product_pic, this.wishlist_product_link});
+  wishlistProduct({this.product, this.wishlist_product_name, this.wishlist_product_price, this.wishlist_product_pic, this.wishlist_product_link, this.wishlist_product_pic_path});
 
 // url launcher taken from flutter docs - https://pub.dev/packages/url_launcher#-readme-tab-
   _launchURL(String url) async {
@@ -840,86 +1229,87 @@ class wishlistProduct extends StatelessWidget {
       elevation: 5,
       child: Center(
         child: Container(
-            height: 150,
-            child: Row(
-              children: <Widget>[
-                InkWell(
-                  child: Container(
-                    height: 150,
-                    width: 125,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(5),
-                          topLeft: Radius.circular(5)
-                      ),
-                      image: DecorationImage(
-                          fit: BoxFit.cover,
-                          image: NetworkImage(wishlist_product_pic)
-                      ),
+          height: 150,
+          child: Row(
+            children: <Widget>[
+              InkWell(
+                child: Container(
+                  height: 150,
+                  width: 125,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(5),
+                        topLeft: Radius.circular(5)
+                    ),
+                    image: DecorationImage(
+                        fit: BoxFit.cover,
+                        image: NetworkImage(wishlist_product_pic)
                     ),
                   ),
-                  onTap: () => _launchURL(wishlist_product_link),
                 ),
-                InkWell(
-                  child: Container(
-                    height: 150,
-                    width: 170,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(10, 2, 0, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Text(
-                              wishlist_product_name,
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.0,
-                                color: Color(0xff000000),
-                                fontFamily: 'JosefinSans'
-                              ),
-                          ),
-                          Padding(padding: EdgeInsets.fromLTRB(0, 15, 0, 3),
-                            child: Container(
-                              width: 150,
-                              child: Text(
-                                  wishlist_product_price,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1.0,
-                                      color: Color(0xff898989),
-                                      fontFamily: 'JosefinSans'
-                                  ),
-                              ),
+                onTap: () => _launchURL(wishlist_product_link),
+              ),
+              InkWell(
+                child: Container(
+                  height: 150,
+                  width: 170,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(10, 2, 0, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                            wishlist_product_name,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.0,
+                              color: Color(0xff000000),
+                              fontFamily: 'JosefinSans'
+                            ),
+                        ),
+                        Padding(padding: EdgeInsets.fromLTRB(0, 15, 0, 3),
+                          child: Container(
+                            width: 150,
+                            child: Text(
+                                "£" + wishlist_product_price,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.0,
+                                    color: Color(0xff898989),
+                                    fontFamily: 'JosefinSans'
+                                ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  onTap: () => _launchURL(wishlist_product_link),
                 ),
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      IconButton(
-                          icon: Icon(
-                              Icons.favorite,
-                          color: Colors.redAccent,
-                          size: 32),
-                          onPressed: (){}
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            )
+                onTap: () => _launchURL(wishlist_product_link),
+              ),
+              Container(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    IconButton(
+                        icon: Icon(
+                            Icons.favorite,
+                        color: Colors.redAccent,
+                        size: 32),
+                        onPressed: () => {
+                        Firestore.instance.collection('product').document(product.documentID).updateData({'wishlist': false})}
+                    ),
+                  ],
+                ),
+              )
+            ],
+          )
         ),
       ),
     ),
@@ -927,32 +1317,4 @@ class wishlistProduct extends StatelessWidget {
   }
 }
 
-class Wishlist extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(0, 45, 0, 5),
-              child: Text(
-                "Wishlist",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 24,
-                    //fontWeight: FontWeight.bold,
-                    letterSpacing: 2.0,
-                    color: Color(0xff878787),
-                    fontFamily: 'JosefinSans'
-                ),
-              ),
-            ),
-          ),
-          Expanded(child: wishlistProducts())
-        ],
-      ),
-      );
-  }
-}
+

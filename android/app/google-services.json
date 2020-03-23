@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "246977327181",
+    "firebase_url": "https://snapit-a5857.firebaseio.com",
+    "project_id": "snapit-a5857",
+    "storage_bucket": "snapit-a5857.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:246977327181:android:392bf1234795cf3474ec04",
+        "android_client_info": {
+          "package_name": "com.snapit.snapit_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "246977327181-9f7s77jgq7e86cfghe29qq324lujd1p1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqbXCGWeMrRq_E2t5vRPulFA6i0lAfy3E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "246977327181-9f7s77jgq7e86cfghe29qq324lujd1p1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
